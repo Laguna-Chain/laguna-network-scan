@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { subSquidGraphServer } from "../../libs/subsquid";
 import config from "../../config";
 import { useSubstrateState } from "../../libs/substrate";
-import { shortenHex } from "../../utils";
+// import { shortenHex } from "../../utils";
 import { formatBalance } from "@polkadot/util";
 import Pagination from "../pagination/pagination";
 import InfoPlaceholder from "../info-placeholder";
@@ -26,30 +26,36 @@ export default function TransfersList() {
     setPageOffset(selected);
   };
 
+  const addAfterToQuery = () => {
+    return `, after: "${endCursor}"`
+  }
+
   useEffect(() => {
     setIsFetchingTransfers(true);
     let isListMounted = true;
     const getTransfers = async () => {
-      let chainInfo = await api.registry.getChainProperties();
+      // let chainInfo = await api.registry.getChainProperties();
 
-      chainInfo = chainInfo.toHuman();
-      const decimals = Number(chainInfo.tokenDecimals[0]);
-      const unit = chainInfo.tokenSymbol[0];
+      // chainInfo = chainInfo.toHuman();
+      const decimals = Number(18); // chainInfo.tokenDecimals[0]
+      const unit = "LGNA"; // chainInfo.tokenSymbol[0]
 
       const QUERY = `{
-        transfersConnection(first: ${limit}, orderBy: createdAt_DESC, after: "${endCursor}") {
+        transfersConnection(first: ${limit}, orderBy: timestamp_DESC${endCursor && addAfterToQuery()}) {
           edges {
             cursor
             node {
               amount
               id
               blockNumber
-              createdAt
+              timestamp
               extrinsicHash
-              extrinsicIndex
-              from
-              success
-              to
+              from {
+                id
+              }
+              to {
+                id
+              }
             }
           }
           pageInfo {
@@ -127,8 +133,8 @@ export default function TransfersList() {
                 }) => (
                   <tr key={id}>
                     <td className="text-accent-purple">
-                      <Link to={`/extrinsic/${blockNumber}-${extrinsicIndex}`}>
-                        {blockNumber}-{extrinsicIndex}
+                      <Link to={`/extrinsic/${blockNumber}`}>
+                        {blockNumber}
                       </Link>
                     </td>
                     <td className="text-accent-purple">
@@ -137,8 +143,8 @@ export default function TransfersList() {
                     <td className="text-dark-white">
                       <FormatedTime time={createdAt} />
                     </td>
-                    <td className="text-accent-purple">{shortenHex(from)}</td>
-                    <td className="text-accent-purple">{shortenHex(to)}</td>
+                    <td className="text-accent-purple">{from.id}</td>
+                    <td className="text-accent-purple">{to.id}</td>
                     <td className="text-dark-white">{amount}</td>
                     <td>
                       {success ? (
@@ -159,7 +165,7 @@ export default function TransfersList() {
                       )}
                     </td>
                     <td className="text-accent-purple">
-                      {shortenHex(extrinsicHash)}
+                      {extrinsicHash}
                     </td>
                   </tr>
                 )

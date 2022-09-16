@@ -46,14 +46,14 @@ export default function EventsFilter({
     let isFilterMounted = true;
     const getModuleOptions = async () => {
       const QUERY = `{
-        substrate_event( distinct_on: section) {
+        events( distinct_on: section) {
           section
         }
       }`;
       const { data } = await subSquidQuery.post("", {
         query: QUERY,
       });
-      const options = data.data.substrate_event.map((s) => ({
+      const options = data.data.event.map((s) => ({
         option: s.section,
         onClick: () => changeFilter("module", s.section),
       }));
@@ -87,7 +87,7 @@ export default function EventsFilter({
     setIsFetchingMethods(true);
     const getMethodOptions = async () => {
       const QUERY = `{
-        substrate_event( distinct_on: method, where: {section: {_eq: "${localParams.module}"}}) {
+        events( distinct_on: method, where: {section: {_eq: "${localParams.module}"}}) {
           method
         }
       }`;
@@ -95,7 +95,7 @@ export default function EventsFilter({
         query: QUERY,
       });
 
-      const options = data.data.substrate_event.map((s) => ({
+      const options = data.data.event.map((s) => ({
         option: s.method,
         onClick: () => changeFilter("eventMethod", s.method),
       }));

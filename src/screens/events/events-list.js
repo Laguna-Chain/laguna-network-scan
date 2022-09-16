@@ -40,21 +40,20 @@ export default function EventsList({
           <tbody>
             {events.map(
               ({
-                eventId,
-                blockNumber,
-                blockTimestamp,
+                id,
+                block,
                 extrinsicId,
                 action,
                 eventJSON,
               }) => (
                 <ExpandableRow
-                  eventId={eventId}
-                  blockNumber={blockNumber}
-                  blockTimestamp={blockTimestamp}
+                  eventId={id}
+                  blockNumber={block.height}
+                  blockTimestamp={block.timestamp}
                   extrinsicId={extrinsicId}
                   action={action}
                   eventJSON={eventJSON}
-                  key={eventId}
+                  key={id}
                 />
               )
             )}

@@ -23,16 +23,14 @@ export default function TransfersHistory({ period, setPeriod }) {
       const { lowerDateString, upperDateString } = getHistoryDateRange(period);
 
       const QUERY = `{
-        transfers(where: {createdAt_lte: "${upperDateString}", createdAt_gte: "${lowerDateString}"}) {
+        transfers(where: {timestamp_lte: "${upperDateString}", timestamp_gte: "${lowerDateString}"}) {
           amount
-          createdAt
+          timestamp
         }
       }`;
       const { data } = await subSquidGraphServer.post("", {
         query: QUERY,
       });
-
-      // console.log("data", data);
 
       if (data.errors) {
         console.error(data.errors);
@@ -41,12 +39,10 @@ export default function TransfersHistory({ period, setPeriod }) {
 
         transfers = transfers.map((t) => ({
           ...t,
-          groupTimestamp: roundToMinutes(t.createdAt, period),
+          groupTimestamp: roundToMinutes(t.timestamp, period),
           value: t.amount,
           // hex: hexToBigInt(t.data.value),
         }));
-
-        //console.log("transfers", transfers);
 
         const groupedTransfers = groupBy(transfers, (a) => a.groupTimestamp);
 

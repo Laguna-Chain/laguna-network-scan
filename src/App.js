@@ -32,7 +32,7 @@ function Main() {
 
   const message = (errObj) => (
     <div className="d-flex align-items-center flex-direction-column message-bar">
-      <span className="header">Error Connecting to peaq network</span>
+      <span className="header">Error Connecting to Laguna network</span>
       <span className="">
         Connection to websocket {errObj.target.url} failed{" "}
       </span>
@@ -40,7 +40,7 @@ function Main() {
   );
 
   if (apiState === "ERROR") return message(apiError);
-  else if (apiState !== "READY") return loader("Connecting to peaq network");
+  else if (apiState !== "READY") return loader("Connecting to Laguna network");
 
   if (keyringState !== "READY") {
     return loader(

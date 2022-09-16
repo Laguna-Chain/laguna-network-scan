@@ -12,7 +12,7 @@ export default function JsonToTable({ json }) {
               if (obj[key] && typeof obj[key] === "object") {
                 return (
                   <td className="bordered">
-                    <JsonToTable json={obj[key]} />
+                    <JsonToTable json={JSON.stringify(obj[key])} />
                   </td>
                 );
               }
