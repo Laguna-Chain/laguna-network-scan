@@ -38,7 +38,7 @@ export default function TransfersList() {
 
       // chainInfo = chainInfo.toHuman();
       const decimals = Number(18); // chainInfo.tokenDecimals[0]
-      const unit = "LGNA"; // chainInfo.tokenSymbol[0]
+      const unit = "LGN"; // chainInfo.tokenSymbol[0]
 
       const QUERY = `{
         transfersConnection(first: ${limit}, orderBy: timestamp_DESC${endCursor && addAfterToQuery()}) {
