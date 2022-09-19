@@ -7,7 +7,7 @@ WORKDIR /usr/src/app
 
 COPY package*.json ./
 COPY . .
-RUN npm install && npm run build
+RUN yarn && yarn build
 # nginx state for serving content
 FROM nginx:alpine
 # Set working directory to nginx asset directory
