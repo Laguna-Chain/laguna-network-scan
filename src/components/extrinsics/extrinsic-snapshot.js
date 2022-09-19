@@ -34,7 +34,7 @@ export default function ExtrinsicSnapshot({ extrinsicId }) {
         const blockObj = signedBlock.block.toHuman();
         blockObj.isFinalized =
           Number(blockNumber) < bestNumberFinalized.toNumber();
-        const extrinsic = signedBlock.block.extrinsics[extrinsicIndex];
+        const extrinsic = signedBlock.block.extrinsics[Number(extrinsicIndex)];
 
         if (extrinsic) {
           extrinsic.isSuccessfull = api.events.system.ExtrinsicSuccess.is(

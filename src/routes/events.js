@@ -47,32 +47,36 @@ export default function Events() {
     whereArgs += `}, `;
 
     const query = `{
-    substrate_event(${whereArgs}order_by: {id: desc}, limit: ${limit}, offset: ${
+    events(${whereArgs}orderBy: id_DESC, limit: ${limit}, offset: ${
       (pageNumber - 1) * 10
     }) {
+      name
       id
       indexInBlock
-      blockNumber
-      blockTimestamp
-      extrinsicIndex
-      method
-      section
-      version
+      block {
+        height
+        timestamp
+      }
+      extrinsic {
+        id
+        indexInBlock
+      }
     }
   }`;
+  // method
+  // section
+  // version
     let isListMounted = true;
     const getEvents = async () => {
       setIsLoadingEvents(true);
       const { data } = await subSquidQuery.post("", {
         query,
       });
-      let events = data.data.substrate_event.map((e) => ({
+      let events = data.data.events.map((e) => ({
         ...e,
-        eventId: `${e.blockNumber}-${e.indexInBlock}`,
-        extrinsicId: e.extrinsicIndex
-          ? `${e.blockNumber}-${e.extrinsicIndex}`
-          : "",
-        action: `${e.section} (${e.method})`,
+        eventId: `${e.block.height}-${e.indexInBlock}`,
+        extrinsicId: e.extrinsic?.id,
+        action: e.name, // `${e.section} (${e.method})`
         eventJSON: JSON.stringify(e, null, 2),
       }));
 

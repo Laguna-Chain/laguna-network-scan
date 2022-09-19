@@ -15,19 +15,21 @@ export default function ExtrinsicsHistory() {
       const { lowerDateString, upperDateString } = getHistoryDateRange(period);
 
       const QUERY = `{
-          substrate_extrinsic(where: {created_at: {_gt: "${lowerDateString}", _lt: "${upperDateString}"}}) {
-            created_at
+          blocks(where: {timestamp_gte: ${new Date(lowerDateString).getTime().toString()}, timestamp_lte: ${new Date(upperDateString).getTime().toString()}}) {
+            timestamp
+            extrinsics {
+              id
+            }
           }
         }`;
       const { data } = await subSquidQuery.post("", {
         query: QUERY,
       });
-
       if (data.errors) {
         console.error(data.errors);
       } else {
-        const extrinsicsTimestamps = data.data.substrate_extrinsic.map((ts) =>
-          roundToMinutes(ts.created_at, period)
+        const extrinsicsTimestamps = data.data.block.map((block) =>
+          roundToMinutes(block.timestamp, period)
         );
         const groupedTimestamps = groupBy(extrinsicsTimestamps);
         let dataset = [];

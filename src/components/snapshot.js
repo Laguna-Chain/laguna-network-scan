@@ -44,7 +44,7 @@ export default function Snapshot() {
       const chainInfo = await api.registry.getChainProperties();
       const chainInfoObj = chainInfo.toHuman();
       const formattedIssuance = formatBalance(issuance, {
-        decimals: Number(chainInfoObj.tokenDecimals[0]),
+        decimals: Number(18),
       });
       setTotalIssuance(
         formattedIssuance.replace("Unit", chainInfoObj.tokenSymbol)

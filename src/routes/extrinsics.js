@@ -100,7 +100,7 @@ export default function Extrinsics() {
 
   return (
     <div className="page">
-      <ExtrinsicsHistory extrinsicsList={extrinsicsList} />
+      {/* <ExtrinsicsHistory extrinsicsList={extrinsicsList} /> */}
       <ExtrinsicsFilter
         params={filterParams}
         changeFilterParams={changeFilterParams}
