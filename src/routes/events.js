@@ -27,23 +27,25 @@ export default function Events() {
 
   useEffect(() => {
     let whereArgs = `where: {`;
-    const { module, eventMethod, startBlock, endBlock, startDate, endDate } =
+    const { module, eventMethod, startBlock, endBlock, startDate, endDate, timeDimension } =
       filterParams;
     if (module && module !== "all") {
-      whereArgs += `section: {_eq: "${module}"}`;
+      whereArgs += `name_startsWith: "${module}",`;
     }
     if (eventMethod && eventMethod !== "all") {
-      whereArgs += `method: {_eq: "${eventMethod}"}`;
+      whereArgs += `name_endsWith: "${eventMethod}",`;
     }
-    if (startBlock && endBlock) {
-      whereArgs += `blockNumber: {_gte: ${startBlock}, _lte: ${endBlock}}`;
+    if (timeDimension === "block") {
+      if (startBlock && endBlock) {
+        whereArgs += `block: {height_gte: ${startBlock}, AND: {height_lte: ${endBlock}}}`;
+      }
+    } else if (timeDimension === "date") {
+      if (startDate && endDate) {
+        const startDateString = new Date(startDate).toISOString()
+        const endDateString = new Date(endDate).toISOString()
+        whereArgs += `block: {timestamp_gte: "${startDateString}", AND: {timestamp_lte: "${endDateString}"}}`;
+      }
     }
-    if (startDate && endDate) {
-      whereArgs += `blockTimestamp: {_gte: "${new Date(
-        startDate
-      ).getTime()}", _lte: "${new Date(endDate).getTime()}"}`;
-    }
-
     whereArgs += `}, `;
 
     const query = `{
@@ -62,10 +64,8 @@ export default function Events() {
         indexInBlock
       }
     }
-  }`;
-  // method
-  // section
-  // version
+    }`;
+
     let isListMounted = true;
     const getEvents = async () => {
       setIsLoadingEvents(true);
@@ -76,7 +76,7 @@ export default function Events() {
         ...e,
         eventId: `${e.block.height}-${e.indexInBlock}`,
         extrinsicId: e.extrinsic?.id,
-        action: e.name, // `${e.section} (${e.method})`
+        action: e.name,
         eventJSON: JSON.stringify(e, null, 2),
       }));
 
