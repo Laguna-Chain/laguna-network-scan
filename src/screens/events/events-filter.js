@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import Dropdown from "../../components/drop-down";
 import FilterField from "../../components/filter-field";
-import { subSquidQuery } from "../../libs/subsquid";
-import modulesData from "../../data/sections-methods.json";
+import { chainQuery } from "../../libs/subsquid";
 
 export default function EventsFilter({
   params,
@@ -27,6 +26,7 @@ export default function EventsFilter({
     },
   ]);
   const [isFetchingMethods, setIsFetchingMethods] = useState(false);
+  const [moduleAndEvents, setModuleAndEvents] = useState({})
 
   const toggleModuleDropdown = () =>
     setIsModuleDropdownOpen(!isModuleDropdownOpen);
@@ -44,61 +44,67 @@ export default function EventsFilter({
 
   useEffect(() => {
     let isFilterMounted = true;
-    const getModuleOptions = async () => {
-      const QUERY = `{
-        events( distinct_on: section) {
-          section
-        }
-      }`;
-      const { data } = await subSquidQuery.post("", {
-        query: QUERY,
+    setIsFetchingMethods(true);
+    const getModuleAndEventOptions = async () => {
+      const response = await chainQuery.get("/unique-event-names")
+
+      const modules = new Set();
+      const events = new Set();
+      const modAndEvents = {};
+      response.data.rows.forEach((e) => {
+        const splitName = e.name.split(".")
+        const module = splitName[0]
+        const event = splitName[1]
+
+        modules.add(module);
+        events.add(event);
+
+        if (!modAndEvents[module]) modAndEvents[module] = [];
+        modAndEvents[module].push(event)
       });
-      const options = data.data.event.map((s) => ({
-        option: s.section,
-        onClick: () => changeFilter("module", s.section),
-      }));
-      options.unshift({
+      modAndEvents["all"] = [...events]
+
+      const moduleOptions = [...modules].map(m => ({
+        option: m,
+        onClick: () => changeFilter("module", m)
+      }))
+      const eventOptions = [...events].map(e => ({
+        option: e,
+        onClick: () => changeFilter("eventMethod", e)
+      }))
+      moduleOptions.unshift({
         option: "all",
         onClick: () => changeFilter("module", "all"),
+      })
+      eventOptions.unshift({
+        option: "all",
+        onClick: () => changeFilter("eventMethod", "all"),
       });
       if (isFilterMounted) {
-        setModuleOptions(options);
+        setModuleOptions(moduleOptions);
+        setEventMethodOptions(eventOptions);
+        setModuleAndEvents(modAndEvents)
+        setIsFetchingMethods(false);
       }
     };
-    // getModuleOptions();
-    // Set hardcoded modules
-    const options = modulesData.map((s) => ({
-      option: s.section,
-      onClick: () => changeFilter("module", s.section),
-    }));
-    options.unshift({
-      option: "all",
-      onClick: () => changeFilter("module", "all"),
-    });
+    try {
+      getModuleAndEventOptions();
+    } catch (e) {
+      console.error(e)
+    }
 
-    setModuleOptions(options);
-
-    // end set hardcoded sections
     return () => (isFilterMounted = false);
   }, []);
 
   useEffect(() => {
     let isFilterMounted = true;
     setIsFetchingMethods(true);
-    const getMethodOptions = async () => {
-      const QUERY = `{
-        events( distinct_on: method, where: {section: {_eq: "${localParams.module}"}}) {
-          method
-        }
-      }`;
-      const { data } = await subSquidQuery.post("", {
-        query: QUERY,
-      });
 
-      const options = data.data.event.map((s) => ({
-        option: s.method,
-        onClick: () => changeFilter("eventMethod", s.method),
-      }));
+    if (moduleAndEvents[localParams.module]) {
+      const options = moduleAndEvents[localParams.module].map(e => ({
+        option: e,
+        onClick: () => changeFilter("eventMethod", e),
+      }))
       options.unshift({
         option: "all",
         onClick: () => changeFilter("eventMethod", "all"),
@@ -107,27 +113,7 @@ export default function EventsFilter({
         setEventMethodOptions(options);
         setIsFetchingMethods(false);
       }
-    };
-    // getMethodOptions();
-
-    // set hardcoded methods
-    const moduleOptions = modulesData.filter(
-      (m) => m.section === localParams.module
-    )[0];
-    const moduleMethods = moduleOptions ? moduleOptions.methods : [];
-
-    const options = moduleMethods.map((s) => ({
-      option: s,
-      onClick: () => changeFilter("eventMethod", s),
-    }));
-    options.unshift({
-      option: "all",
-      onClick: () => changeFilter("eventMethod", "all"),
-    });
-
-    setEventMethodOptions(options);
-    setIsFetchingMethods(false);
-    // End set hardcoded methods
+    }
 
     return () => (isFilterMounted = false);
   }, [localParams.module]);

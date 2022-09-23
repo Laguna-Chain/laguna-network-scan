@@ -9,4 +9,8 @@ const subSquidGraphServer = axios.create({
   baseURL: config.SUBSQUID_GRAPH_SERVER,
 });
 
-export { subSquidQuery, subSquidGraphServer };
+const chainQuery = axios.create({
+  baseURL: config.CHAIN_QUERY_SERVER,
+})
+
+export { subSquidQuery, subSquidGraphServer, chainQuery };

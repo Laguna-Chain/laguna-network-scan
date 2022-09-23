@@ -4,6 +4,7 @@
   "ITEMS_PER_PAGE": 10,
   "MAX_PAGE_SIZE": 10,
   "TOKEN_VALUE": 100000000000000000,
-  "SUBSQUID_ARCHIVE_GRAPH_NODE": "http://35.208.25.47:4444/graphql",
-  "SUBSQUID_GRAPH_SERVER": "http://35.208.25.47:4350/graphql"
+  "SUBSQUID_ARCHIVE_GRAPH_NODE": "https://explorer.laguna-chain-dev.hydrogenx.live/graphql",
+  "SUBSQUID_GRAPH_SERVER": "https://explorer.laguna-chain-dev.hydrogenx.live/processed/graphql",
+  "CHAIN_QUERY_SERVER": "https://queries.laguna-chain-dev.hydrogenx.live"
 }
