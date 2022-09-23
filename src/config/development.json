@@ -1,4 +1,4 @@
 {
-  "PROVIDER_SOCKET": "wss://laguna-chain-dev.hydrogenx.tk",
+  "PROVIDER_SOCKET": "wss://laguna-chain-dev.hydrogenx.live",
   "DEVELOPMENT_KEYRING": true
 }
