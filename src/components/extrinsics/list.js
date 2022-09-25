@@ -3,55 +3,19 @@ import { copyText } from "../../utils";
 import FormatedTime from "../formated-time";
 import InfoPlaceholder from "../info-placeholder";
 import Pagination from "../pagination/pagination";
-import { useEffect, useState } from "react";
-import config from "../../config";
 
 export default function ExtrinsicsList({
   extrinsicsList,
-  isLoadingExtrinsics
+  isLoadingExtrinsics,
+  handlePageClick,
+  pageCount,
+  pageNum
 }) {
-  const [currentItems, setCurrentItems] = useState(null);
-  const [pageCount, setPageCount] = useState(0);
-  const [itemOffset, setItemOffset] = useState(0);
-  const [isDataFetched, setIsDataFetched] = useState(true);
-  const [pageNum, setPageNum] = useState(0);
-
-  //console.log("extrinsicsList", extrinsicsList);
-
-  const getExtrinsics = async () => {
-    // Fetch items from another resources.
-    const endOffset = itemOffset + config.ITEMS_PER_PAGE;
-
-    setCurrentItems(extrinsicsList.slice(itemOffset, endOffset));
-    setPageCount(Math.ceil(extrinsicsList.length / config.ITEMS_PER_PAGE));
-  }
-
-  useEffect(() => {
-    getExtrinsics();
-  }, [itemOffset, config.ITEMS_PER_PAGE]);
-
-  // Invoke when user click to request another page.
-  const handlePageClick = (event) => {
-    const newOffset = (event.selected * config.ITEMS_PER_PAGE) % extrinsicsList.length;
-    // console.log(
-    //   `User requested page number ${event.selected}, which is offset ${newOffset}`
-    // );
-    setItemOffset(newOffset);
-    setPageNum(event.selected);
-  };
-
-
   if (isLoadingExtrinsics) {
     return <InfoPlaceholder text="Loading extrinsics list..." />;
   }
   if (extrinsicsList.length < 1) {
     return <InfoPlaceholder text="Sorry, nothing to show here" />;
-  }
-  if (extrinsicsList.length > 1) {
-    if (isDataFetched) {
-      getExtrinsics();
-      setIsDataFetched(false);
-    }
   }
   return (
     <>
@@ -69,7 +33,7 @@ export default function ExtrinsicsList({
             </tr>
           </thead>
           <tbody>
-            {currentItems.map(
+            {extrinsicsList.map(
               ({
                 extrinsicId,
                 blockNumber,

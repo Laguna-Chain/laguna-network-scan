@@ -1,15 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { useSubstrateState } from "../libs/substrate";
-import config from "../config";
 import ExtrinsicsHistory from "../components/extrinsics/history";
 import ExtrinsicsFilter from "../components/extrinsics/filter";
 import ExtrinsicsList from "../components/extrinsics/list";
 import { shortenHex } from "../utils";
+import { subSquidQuery, chainQuery } from "../libs/subsquid";
 
 export default function Extrinsics() {
-  const { api } = useSubstrateState();
-
-  const [extrinsicsList, setExtrinsicsList] = useState([]);
   const [filterParams, setFilterParams] = useState({
     module: "all", // dynamicFee, timestamp
     timeDimension: "date", // date, block
@@ -20,95 +16,134 @@ export default function Extrinsics() {
   });
   const [extrinsics, setExtrinsics] = useState([]);
   const [isLoadingExtrinsics, setIsLoadingExtrinsics] = useState(false);
+  const [modules, setModules] = useState([]);
+  const [itemOffset, setItemOffset] = useState(0);
+  const [pageNum, setPageNum] = useState(0);
 
   const changeFilterParams = (param, value) => {
     setFilterParams({ ...filterParams, [param]: value });
   };
 
-  const filterExtrinsics = () => {
-    setIsLoadingExtrinsics(true);
-    let filteredExtrinsics = [...extrinsicsList];
-    const { module, startBlock, endBlock, startDate, endDate } = filterParams;
-    if (module !== "all") {
-      filteredExtrinsics = filteredExtrinsics.filter(
-        (e) => e.module === module
-      );
-    }
-    if (startBlock && endBlock) {
-      filteredExtrinsics = filteredExtrinsics.filter(
-        (e) =>
-          Number(e.blockNumber) >= Number(startBlock) &&
-          Number(e.blockNumber) <= Number(endBlock)
-      );
-    }
-    if (startDate && endDate) {
-      filteredExtrinsics = filteredExtrinsics.filter(
-        (e) =>
-          e.time >= new Date(startDate).setHours(0, 0, 0, 0) &&
-          e.time <= new Date(endDate).setHours(23, 59, 59, 999)
-      );
-    }
-    setExtrinsics(filteredExtrinsics);
-    setIsLoadingExtrinsics(false);
+  const handlePageClick = (event) => {
+    const newOffset = (event.selected * 50) % extrinsics.length;
+    // console.log(
+    //   `User requested page number ${event.selected}, which is offset ${newOffset}`
+    // );
+    setItemOffset(newOffset);
+    setPageNum(event.selected);
   };
 
   useEffect(() => {
-    const getExtrinsics = async () => {
-      setIsLoadingExtrinsics(true);
-      try {
-        const lastHeader = await api.rpc.chain.getHeader();
+    let isFilterMounted = true;
 
-        let blockNumber = lastHeader.number.toNumber();
-        const limit = config.ITEMS_PER_PAGE;
-        let extrinsicsList = [];
-        let count = 0;
-        while (count < limit) {
-          const blockHash = await api.rpc.chain.getBlockHash(blockNumber);
-          const signedBlock = await api.rpc.chain.getBlock(blockHash);
-          const block = signedBlock.toHuman().block;
-          let num = block.header.number.replace(/,/g, "");
-          let time = Number(
-            block.extrinsics[0].method.args.now.replace(/,/g, "")
-          );
-          block.extrinsics.forEach((extrinsic, i) => {
-            const ext = {
-              extrinsicId: `${num}-${i}`,
-              blockNumber: num,
-              hash:
-                shortenHex(signedBlock.block.extrinsics[i].hash.toHex()) || "-",
-              time,
-              isSigned: extrinsic.isSigned,
-              action: `${extrinsic.method.section} (${extrinsic.method.method})`,
-              module: extrinsic.method.section,
-              extrinsicJSON: JSON.stringify(extrinsic),
-            };
-            extrinsicsList.push(ext);
-          });
-          count++;
-          blockNumber = blockNumber - 1;
-        }
-        setExtrinsicsList(extrinsicsList);
-        setExtrinsics(extrinsicsList);
-      } catch (err) {
-        console.error(err);
+    const getModules = async () => {
+      const response = await chainQuery.get("/unique-event-names")
+
+      const modules = new Set();
+      response.data.rows.forEach((e) => {
+        const splitName = e.name.split(".")
+        const module = splitName[0]
+
+        modules.add(module);
+      });
+
+      if (isFilterMounted) {
+        setModules([...modules]);
       }
-      setIsLoadingExtrinsics(false);
+    };
+    try {
+      getModules();
+    } catch (e) {
+      console.error(e)
+    }
+
+    return () => (isFilterMounted = false);
+  }, []);
+
+  useEffect(() => {
+    let whereArgs = `where: {`;
+    const { module, startBlock, endBlock, startDate, endDate, timeDimension } =
+      filterParams;
+    if (module && module !== "all") {
+      whereArgs += `block: {events_some: {name_startsWith: "${module}"}},`;
+    }
+    if (timeDimension === "block") {
+      if (startBlock && endBlock) {
+        whereArgs += `block: {height_gte: ${startBlock}, AND: {height_lte: ${endBlock}}}`;
+      }
+    } else if (timeDimension === "date") {
+      if (startDate && endDate) {
+        const startDateString = new Date(startDate).toISOString()
+        const endDateString = new Date(endDate).toISOString()
+        whereArgs += `block: {timestamp_gte: "${startDateString}", AND: {timestamp_lte: "${endDateString}"}}`;
+      }
+    }
+    whereArgs += `}, `;
+
+    const query = `{
+      extrinsics(${whereArgs}orderBy: id_DESC, limit: ${50}, offset: ${pageNum * 10}) {
+        block {
+          timestamp
+          id
+          height
+          hash
+          events {
+            name
+            indexInBlock
+          }
+        }
+        indexInBlock
+        hash
+        id
+        signature
+      }
+    }`
+
+    let isListMounted = true;
+    const getEvents = async () => {
+      const { data } = await subSquidQuery.post("", {
+        query,
+      });
+      const { module } = filterParams;
+      const extrinsics = data.data.extrinsics.map((e) => {
+        const extrinsicModule = module === "all" ? e.block.events[0]?.name : e.block.events.find(e => e.name.startsWith(module))?.name
+
+        return {
+          extrinsicId: `${e.block.height}-${e.indexInBlock}`,
+          blockNumber: e.block.height,
+          hash:
+            shortenHex(e.hash) || "-",
+          time: e.block.timestamp,
+          isSigned: e.signature !== null,
+          action: extrinsicModule,
+          module: extrinsicModule.split(".")[0],
+          extrinsicJSON: JSON.stringify(e),
+        }
+      });
+
+      if (isListMounted) {
+        setExtrinsics(extrinsics);
+      }
     };
 
-    getExtrinsics();
-  }, [api.rpc.chain]);
+    getEvents();
+    return () => (isListMounted = false);
+  }, [filterParams]);
 
   return (
     <div className="page">
       {/* <ExtrinsicsHistory extrinsicsList={extrinsicsList} /> */}
       <ExtrinsicsFilter
+        filterOptions={modules}
         params={filterParams}
         changeFilterParams={changeFilterParams}
-        filterExtrinsics={filterExtrinsics}
       />
       <ExtrinsicsList
-        extrinsicsList={extrinsics}
+        extrinsicsList={extrinsics.slice(itemOffset, itemOffset + 50)}
         isLoadingExtrinsics={isLoadingExtrinsics}
+        handlePageClick={handlePageClick}
+        pageCount={Math.ceil(extrinsics.length / 50)}
+        pageNum={pageNum}
       />
     </div>
   );

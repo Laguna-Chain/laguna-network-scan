@@ -96,7 +96,6 @@ export default function Events() {
       <div className="bordered-content-box mb-40">
         <EventsFilter
           params={filterParams}
-          changeFilterParams={changeFilterParams}
           setFilterParams={setFilterParams}
           setPageNumber={setPageNumber}
         />

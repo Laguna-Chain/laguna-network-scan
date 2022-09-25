@@ -3,9 +3,9 @@ import Dropdown from "../drop-down";
 import ExtrinsicFilterField from "./extrinsic-filter-field";
 
 export default function ExtrinsicsFilter({
+  filterOptions,
   params,
   changeFilterParams,
-  filterExtrinsics,
 }) {
   const [isModuleDropdownOpen, setIsModuleDropdownOpen] = useState(false);
   const [isTimeDimensionDropdownOpen, setIsTimeDimensionDropdownOpen] =
@@ -47,15 +47,7 @@ export default function ExtrinsicsFilter({
             <Dropdown
               options={[
                 { option: "All", onClick: () => changeFilter("module", "all") },
-                {
-                  option: "Dynamic Fee",
-                  onClick: () => changeFilter("module", "dynamicFee"),
-                },
-                {
-                  option: "Timestamp",
-                  onClick: () => changeFilter("module", "timestamp"),
-                },
-              ]}
+              ].concat(filterOptions.map(o => ({option: o, onClick: () => changeFilter("module", o)})))}
             />
           )}
         </div>
@@ -130,7 +122,7 @@ export default function ExtrinsicsFilter({
           </>
         )}
         <div>
-          <span className="button" onClick={() => filterExtrinsics()}>
+          <span className="button" onClick={() => {}}>
             Filter
           </span>
         </div>
